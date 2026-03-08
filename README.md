@@ -257,6 +257,75 @@ constructor(private catsService: CatsService)
 👉 NestJS নিজে CatsService বানাবে
 👉 constructor দিয়ে CatsController এ inject করবে।
 
+## Providers 03: Scopes
+
+সাধারণত Providers-এর একটি জীবনকাল (“scope”) থাকে যা অ্যাপ্লিকেশনের lifecycle-এর সাথে সামঞ্জস্যপূর্ণ। যখন অ্যাপ্লিকেশন bootstrapped হয়, তখন প্রতিটি dependency resolve হতে হয়, অর্থাৎ প্রতিটি provider-এর instance তৈরি করা হয়। একইভাবে, যখন অ্যাপ্লিকেশন বন্ধ হয়, তখন সব provider ধ্বংস হয়ে যায়। তবে একটি provider-কে request-scoped করাও সম্ভব, যার অর্থ এর জীবনকাল অ্যাপ্লিকেশনের lifecycle-এর পরিবর্তে নির্দিষ্ট একটি request-এর সাথে সম্পর্কিত থাকে।
+
+## Providers 04: Custom providers
+
+Nest একটি built-in inversion of control (“IoC”) container নিয়ে আসে যা providers-এর মধ্যে সম্পর্কগুলো পরিচালনা করে। এই বৈশিষ্ট্যটি dependency injection-এর ভিত্তি, তবে এখন পর্যন্ত আমরা যতটা আলোচনা করেছি তার চেয়েও এটি অনেক বেশি শক্তিশালী। একটি provider সংজ্ঞায়িত করার জন্য কয়েকটি উপায় আছে: আপনি সাধারণ value, class, এবং asynchronous বা synchronous factory ব্যবহার করতে পারেন।
+
+## Providers 05: Optional providers
+
+কখনও কখনও আপনার এমন dependency থাকতে পারে যেগুলো সব সময় resolve করা প্রয়োজন হয় না। উদাহরণস্বরূপ, আপনার class একটি configuration object-এর উপর নির্ভর করতে পারে, কিন্তু যদি কোনোটি প্রদান করা না হয়, তাহলে default value ব্যবহার করা উচিত। এমন ক্ষেত্রে dependency-টিকে optional হিসেবে বিবেচনা করা হয়, এবং configuration provider না থাকলেও কোনো error হওয়া উচিত নয়।
+
+কোনো provider-কে optional হিসেবে চিহ্নিত করতে constructor-এর signature-এ @Optional() decorator ব্যবহার করতে হয়।
+
+```bash
+
+import { Injectable, Optional, Inject } from '@nestjs/common';
+
+@Injectable()
+export class HttpService<T> {
+  constructor(@Optional() @Inject('HTTP_OPTIONS') private httpClient: T) {}
+}
+
+```
+
+উপরের উদাহরণে আমরা একটি custom provider ব্যবহার করছি, এজন্যই আমরা HTTP_OPTIONS custom token অন্তর্ভুক্ত করেছি। আগের উদাহরণগুলোতে constructor-ভিত্তিক injection দেখানো হয়েছে, যেখানে constructor-এর মধ্যে একটি class-এর মাধ্যমে dependency নির্দেশ করা হয়।
+
+
+## Providers 06: Property-based injection
+
+এখন পর্যন্ত আমরা যে পদ্ধতি ব্যবহার করেছি তাকে constructor-based injection বলা হয়, যেখানে constructor method-এর মাধ্যমে providers inject করা হয়। কিছু নির্দিষ্ট ক্ষেত্রে property-based injection উপকারী হতে পারে। উদাহরণস্বরূপ, যদি আপনার top-level class এক বা একাধিক provider-এর উপর নির্ভর করে, তাহলে sub-class গুলোর মধ্যে super() এর মাধ্যমে সেগুলো উপরে পর্যন্ত পাঠানো ঝামেলাপূর্ণ হয়ে যেতে পারে। এটি এড়ানোর জন্য আপনি সরাসরি property level-এ @Inject() decorator ব্যবহার করতে পারেন।
+
+```bash
+
+import { Injectable, Inject } from '@nestjs/common';
+
+@Injectable()
+export class HttpService<T> {
+  @Inject('HTTP_OPTIONS')
+  private readonly httpClient: T;
+}
+
+```
+
+## Providers 07: Provider registration
+
+এখন যেহেতু আমরা একটি provider (CatsService) এবং একটি consumer (CatsController) সংজ্ঞায়িত করেছি, তাই Nest যেন injection পরিচালনা করতে পারে তার জন্য আমাদের service-টি register করতে হবে। এটি করার জন্য module ফাইল (app.module.ts) সম্পাদনা করে @Module() decorator-এর providers array-এ service-টি যোগ করতে হয়।
+
+```bash
+# app.module.ts
+
+import { Module } from '@nestjs/common';
+import { CatsController } from './cats/cats.controller';
+import { CatsService } from './cats/cats.service';
+
+@Module({
+  controllers: [CatsController],
+  providers: [CatsService],
+})
+export class AppModule {}
+
+```
+
+এখন Nest CatsController ক্লাসের dependency গুলো resolve করতে পারবে।
+
+এই পর্যায়ে, আমাদের directory structure এমন হওয়া উচিত:
+
+![](/public/Img/structureofnest.png)
+
 
 
 
