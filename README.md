@@ -78,9 +78,10 @@ export class ProductController {
 
 ## Provider
 
+<p style="text-align: justify">
 প্রোভাইডার Nest-এর একটি মূল ধারণা। Nest-এর অনেক মৌলিক ক্লাস যেমন services, repositories, factories এবং helpers—এগুলোকে প্রোভাইডার হিসেবে গণ্য করা যায়। একটি প্রোভাইডারের মূল ধারণা হলো এটিকে একটি dependency হিসেবে inject করা যায়, যার মাধ্যমে বিভিন্ন অবজেক্ট একে অপরের সাথে বিভিন্ন ধরনের সম্পর্ক তৈরি করতে পারে। এই অবজেক্টগুলোকে একসাথে যুক্ত করার দায়িত্ব মূলত Nest runtime system পরিচালনা করে।
 আগের অধ্যায়ে আমরা একটি সহজ CatsController তৈরি করেছি। Controllers-এর কাজ হলো HTTP request হ্যান্ডেল করা এবং আরও জটিল কাজগুলো providers-এর কাছে delegate করা। Providers হলো সাধারণ JavaScript class, যেগুলোকে একটি NestJS module-এ provider হিসেবে ঘোষণা করা হয়। আরও বিস্তারিত জানতে "Modules" অধ্যায় দেখুন।
-
+</p>
 
 ## Providers 01: Services
 
@@ -159,6 +160,102 @@ export class CatsController {
 #### Output view
 ![](/public/Img/cats.png)
 ![](/public/Img/catsget.png)
+
+
+## Providers 02: Dependency injection
+
+Dependency মানে কী?
+
+যখন একটি class কাজ করার জন্য অন্য একটি class-এর উপর নির্ভর করে, তখন সেটাকে dependency বলে।
+
+উদাহরণ:
+
+```bash
+class CatsService {
+  getCats() {
+    return ["Tom", "Kitty"];
+  }
+}
+
+class CatsController {
+  private catsService = new CatsService();
+
+  getAllCats() {
+    return this.catsService.getCats();
+  }
+}
+```
+
+এখানে
+CatsController → CatsService এর উপর নির্ভর করছে।
+
+সমস্যা হলো:
+Controller নিজেই new CatsService() বানাচ্ছে।
+
+এতে সমস্যা:
+
+Code tightly coupled হয়ে যায়
+
+Test করা কঠিন
+
+বড় project এ manage করা কঠিন
+
+Dependency Injection কী?
+
+Dependency Injection মানে হলো:
+
+👉 যে class-এর দরকার, সেটাকে নিজে তৈরি না করে
+👉 বাইরের system (NestJS) তৈরি করে
+👉 constructor দিয়ে inject করে দেয়।
+
+অর্থাৎ:
+
+NestJS নিজেই service তৈরি করে controller-এ দিয়ে দেয়।
+
+Example--
+
+```bash
+# service
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class CatsService {
+  getCats() {
+    return ["Tom", "Kitty"];
+  }
+}
+```
+
+@Injectable() বলছে:
+
+➡️ এই class NestJS manage করবে।
+
+```bash
+# controller
+import { Controller, Get } from '@nestjs/common';
+import { CatsService } from './cats.service';
+
+@Controller('cats')
+export class CatsController {
+  constructor(private catsService: CatsService) {}
+
+  @Get()
+  findAll() {
+    return this.catsService.getCats();
+  }
+}
+```
+
+এখানে কি হচ্ছে?
+
+```bash
+constructor(private catsService: CatsService)
+```
+
+মানে:
+
+👉 NestJS নিজে CatsService বানাবে
+👉 constructor দিয়ে CatsController এ inject করবে।
 
 
 
