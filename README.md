@@ -71,6 +71,8 @@ export class ProductController {
 }
 ```
 
+#### Output View
+
 ![](/public/Img/output1.png)
 ![](/public/Img/output2.png)
 
